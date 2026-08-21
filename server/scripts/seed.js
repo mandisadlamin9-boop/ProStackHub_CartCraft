@@ -10,7 +10,7 @@ const products = [
     price: 799.99,
     category: "Phones",
     stock: 25,
-    image_url: "https://placehold.co/400x400?text=Pulse+X12",
+    image_url: "https://picsum.photos/seed/pulse-x12-phone/400/400",
   },
   {
     name: "Nova Lite 5G",
@@ -18,7 +18,7 @@ const products = [
     price: 349.99,
     category: "Phones",
     stock: 40,
-    image_url: "https://placehold.co/400x400?text=Nova+Lite",
+    image_url: "https://picsum.photos/seed/nova-lite-phone/400/400",
   },
   {
     name: "Vertex Pro Max",
@@ -26,7 +26,7 @@ const products = [
     price: 1199.99,
     category: "Phones",
     stock: 12,
-    image_url: "https://placehold.co/400x400?text=Vertex+Pro+Max",
+    image_url: "https://picsum.photos/seed/vertex-pro-phone/400/400",
   },
 
   // Laptops
@@ -36,7 +36,7 @@ const products = [
     price: 1099.0,
     category: "Laptops",
     stock: 15,
-    image_url: "https://placehold.co/400x400?text=AeroBook+14",
+    image_url: "https://picsum.photos/seed/aerobook-laptop/400/400",
   },
   {
     name: "TitanForge Gaming Laptop",
@@ -44,7 +44,7 @@ const products = [
     price: 1899.0,
     category: "Laptops",
     stock: 8,
-    image_url: "https://placehold.co/400x400?text=TitanForge",
+    image_url: "https://picsum.photos/seed/titanforge-laptop/400/400",
   },
   {
     name: "CoreBook Essential 15",
@@ -52,7 +52,7 @@ const products = [
     price: 649.0,
     category: "Laptops",
     stock: 30,
-    image_url: "https://placehold.co/400x400?text=CoreBook+15",
+    image_url: "https://picsum.photos/seed/corebook-laptop/400/400",
   },
 
   // Headphones
@@ -62,7 +62,7 @@ const products = [
     price: 229.99,
     category: "Headphones",
     stock: 50,
-    image_url: "https://placehold.co/400x400?text=EchoWave+ANC",
+    image_url: "https://picsum.photos/seed/echowave-headphones/400/400",
   },
   {
     name: "SonicBuds Pro Earbuds",
@@ -70,7 +70,7 @@ const products = [
     price: 149.99,
     category: "Headphones",
     stock: 60,
-    image_url: "https://placehold.co/400x400?text=SonicBuds+Pro",
+    image_url: "https://picsum.photos/seed/sonicbuds-earbuds/400/400",
   },
   {
     name: "BassLine Studio Headphones",
@@ -78,7 +78,7 @@ const products = [
     price: 179.99,
     category: "Headphones",
     stock: 20,
-    image_url: "https://placehold.co/400x400?text=BassLine+Studio",
+    image_url: "https://picsum.photos/seed/bassline-headphones/400/400",
   },
 
   // Smartwatches
@@ -88,7 +88,7 @@ const products = [
     price: 249.99,
     category: "Smartwatches",
     stock: 35,
-    image_url: "https://placehold.co/400x400?text=PulseFit+S4",
+    image_url: "https://picsum.photos/seed/pulsefit-watch/400/400",
   },
   {
     name: "TrailMaster GPS Watch",
@@ -97,7 +97,7 @@ const products = [
     price: 329.99,
     category: "Smartwatches",
     stock: 18,
-    image_url: "https://placehold.co/400x400?text=TrailMaster",
+    image_url: "https://picsum.photos/seed/trailmaster-watch/400/400",
   },
   {
     name: "MinimalTime Lite",
@@ -106,7 +106,7 @@ const products = [
     price: 129.99,
     category: "Smartwatches",
     stock: 45,
-    image_url: "https://placehold.co/400x400?text=MinimalTime+Lite",
+    image_url: "https://picsum.photos/seed/minimaltime-watch/400/400",
   },
 
   // Accessories
@@ -116,7 +116,7 @@ const products = [
     price: 39.99,
     category: "Accessories",
     stock: 100,
-    image_url: "https://placehold.co/400x400?text=ChargeHub+65W",
+    image_url: "https://picsum.photos/seed/chargehub-charger/400/400",
   },
   {
     name: "ShieldCase Pro (Universal)",
@@ -124,7 +124,7 @@ const products = [
     price: 24.99,
     category: "Accessories",
     stock: 80,
-    image_url: "https://placehold.co/400x400?text=ShieldCase+Pro",
+    image_url: "https://picsum.photos/seed/shieldcase-case/400/400",
   },
   {
     name: "GripStand Adjustable Mount",
@@ -132,7 +132,7 @@ const products = [
     price: 19.99,
     category: "Accessories",
     stock: 70,
-    image_url: "https://placehold.co/400x400?text=GripStand",
+    image_url: "https://picsum.photos/seed/gripstand-mount/400/400",
   },
 ];
 
@@ -156,8 +156,13 @@ async function seed() {
     console.log(`Inserted ${products.length} products.`);
 
     console.log("Seeding admin account...");
-    const adminEmail = "admin@cartcraft.com";
-    const adminPassword = "Admin@12345";
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env");
+    }
+
     const passwordHash = await bcrypt.hash(adminPassword, 10);
 
     await pool
