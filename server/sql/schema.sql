@@ -51,3 +51,14 @@ CREATE TABLE reviews (
     CONSTRAINT CK_reviews_rating CHECK (rating BETWEEN 1 AND 5),
     CONSTRAINT UQ_reviews_user_product UNIQUE (user_id, product_id)
 );
+
+CREATE TABLE cart_items (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    created_at DATETIME2 DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_cartitems_users FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT FK_cartitems_products FOREIGN KEY (product_id) REFERENCES products(id),
+    CONSTRAINT UQ_cartitems_user_product UNIQUE (user_id, product_id)
+);
