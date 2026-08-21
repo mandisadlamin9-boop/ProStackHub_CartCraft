@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sql, getPool } = require("../config/db");
+const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -102,6 +103,30 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error("Login error:", err.message);
     res.status(500).json({ error: "Login failed" });
+  }
+});
+
+router.get("/me", requireAuth, async (req, res) => {
+  try {
+    const pool = await getPool();
+
+    const result = await pool
+      .request()
+      .input("id", sql.Int, req.user.id)
+      .query(
+        "SELECT id, email, name, role, created_at FROM users WHERE id = @id",
+      );
+
+    const user = result.recordset[0];
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ user });
+  } catch (err) {
+    console.error("Get profile error:", err.message);
+    res.status(500).json({ error: "Failed to fetch profile" });
   }
 });
 
