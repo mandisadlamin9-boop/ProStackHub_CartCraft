@@ -10,7 +10,13 @@ const checkoutRoutes = require("./routes/checkout");
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/checkout/webhook") {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 app.get("/", (req, res) => {
   res.json({ message: "CartCraft API is running" });

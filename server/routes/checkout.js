@@ -107,4 +107,84 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/checkout/webhook - Stripe calls this directly, server-to-server
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET,
+      );
+    } catch (err) {
+      console.error("Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const orderId = parseInt(session.metadata.order_id);
+      const userId = parseInt(session.metadata.user_id);
+
+      try {
+        const pool = await getPool();
+
+        // Get the order's items so we can decrement stock
+        const itemsResult = await pool
+          .request()
+          .input("order_id", sql.Int, orderId)
+          .query(
+            "SELECT product_id, quantity FROM order_items WHERE order_id = @order_id",
+          );
+
+        // Atomically decrement stock for each item - only succeeds if enough stock remains
+        for (const item of itemsResult.recordset) {
+          const stockResult = await pool
+            .request()
+            .input("product_id", sql.Int, item.product_id)
+            .input("quantity", sql.Int, item.quantity).query(`UPDATE products
+                  SET stock = stock - @quantity
+                  OUTPUT INSERTED.id
+                  WHERE id = @product_id AND stock >= @quantity`);
+
+          if (stockResult.recordset.length === 0) {
+            console.error(
+              `Insufficient stock for product ${item.product_id} on order ${orderId}`,
+            );
+            // In a production system we'd trigger a refund here; for this project we log and flag it
+          }
+        }
+
+        // Mark the order as paid/placed
+        await pool
+          .request()
+          .input("order_id", sql.Int, orderId)
+          .input("payment_intent", sql.NVarChar, session.payment_intent)
+          .query(`UPDATE orders
+                SET status = 'Placed', stripe_payment_intent = @payment_intent
+                WHERE id = @order_id`);
+
+        // Clear the user's cart now that checkout is complete
+        await pool
+          .request()
+          .input("user_id", sql.Int, userId)
+          .query("DELETE FROM cart_items WHERE user_id = @user_id");
+
+        console.log(
+          `Order ${orderId} marked as Placed, stock decremented, cart cleared.`,
+        );
+      } catch (err) {
+        console.error("Webhook processing error:", err.message);
+      }
+    }
+
+    res.json({ received: true });
+  },
+);
+
 module.exports = router;
