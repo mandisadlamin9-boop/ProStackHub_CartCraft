@@ -106,4 +106,32 @@ router.put("/:id/status", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/orders/admin/summary - admin: basic sales stats
+router.get("/admin/summary", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const pool = await getPool();
+
+    const result = await pool.request().query(`SELECT
+                COUNT(*) AS total_orders,
+                ISNULL(SUM(total_amount), 0) AS total_revenue
+              FROM orders
+              WHERE status != 'Pending'`);
+
+    const statusBreakdown = await pool.request()
+      .query(`SELECT status, COUNT(*) AS count
+              FROM orders
+              WHERE status != 'Pending'
+              GROUP BY status`);
+
+    res.json({
+      total_orders: result.recordset[0].total_orders,
+      total_revenue: result.recordset[0].total_revenue,
+      by_status: statusBreakdown.recordset,
+    });
+  } catch (err) {
+    console.error("Get sales summary error:", err.message);
+    res.status(500).json({ error: "Failed to fetch sales summary" });
+  }
+});
+
 module.exports = router;
