@@ -44,7 +44,7 @@ router.get("/admin/all", requireAuth, requireAdmin, async (req, res) => {
     const pool = await getPool();
 
     const result = await pool.request()
-      .query(`SELECT o.id, o.total_amount, o.status, o.created_at, u.name AS customer_name, u.email
+      .query(`SELECT o.id, o.total_amount, o.status, o.created_at, o.archived, u.name AS customer_name, u.email
               FROM orders o
               JOIN users u ON o.user_id = u.id
               WHERE o.status != 'Pending'
@@ -103,6 +103,26 @@ router.put("/:id/status", requireAuth, requireAdmin, async (req, res) => {
   } catch (err) {
     console.error("Update order status error:", err.message);
     res.status(500).json({ error: "Failed to update order status" });
+  }
+});
+// PUT /api/orders/:id/archive - admin: hide a fulfilled order from the main view
+router.put("/:id/archive", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const pool = await getPool();
+
+    const result = await pool.request().input("id", sql.Int, req.params.id)
+      .query(`UPDATE orders SET archived = 1
+              OUTPUT INSERTED.*
+              WHERE id = @id`);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({ order: result.recordset[0] });
+  } catch (err) {
+    console.error("Archive order error:", err.message);
+    res.status(500).json({ error: "Failed to archive order" });
   }
 });
 
