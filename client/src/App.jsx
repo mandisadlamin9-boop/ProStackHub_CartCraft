@@ -4,6 +4,8 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Cart from "./pages/Cart";
+import OrderSuccess from "./pages/OrderSuccess";
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
 
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
       </Routes>
     </BrowserRouter>
   );

@@ -69,7 +69,7 @@ router.post("/", requireAuth, async (req, res) => {
     // Build Stripe's line items from server-verified prices, never client-sent ones
     const line_items = cartItems.map((item) => ({
       price_data: {
-        currency: "usd",
+        currency: "zar",
         product_data: {
           name: item.name,
           images: item.image_url ? [item.image_url] : [],

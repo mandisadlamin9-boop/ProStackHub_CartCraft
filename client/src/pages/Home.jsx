@@ -88,12 +88,12 @@ export default function Home() {
                 Sign in
               </Link>
             )}
-            <span className="store-cart-icon">
+            <Link to="/cart" className="store-cart-icon">
               Cart
               {cartCount > 0 && (
                 <span className="store-cart-badge">{cartCount}</span>
               )}
-            </span>
+            </Link>
           </div>
         </div>
 
