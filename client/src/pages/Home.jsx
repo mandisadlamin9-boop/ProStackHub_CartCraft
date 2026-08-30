@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiFetch, getCurrentUser } from "../lib/api";
-import { CATEGORIES, CATEGORY_COLORS } from "../lib/constants";
+import { CATEGORIES } from "../lib/constants";
+import StoreNav from "../components/StoreNav";
+import PromoBanner from "../components/PromoBanner";
+import heroImg from "../assets/hero-devices.jpg";
+import phonesImg from "../assets/promo-phones.jpg";
+import laptopImg from "../assets/promo-laptop.jpg";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -10,10 +15,7 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState(null);
   const [cartCount, setCartCount] = useState(0);
-  const [addedId, setAddedId] = useState(null);
 
   useEffect(() => {
     apiFetch("/api/products")
@@ -30,134 +32,116 @@ export default function Home() {
     }
   }, []);
 
-  const filtered = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = !activeCategory || p.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleAddToCart = async (product) => {
-    if (!user) {
-      navigate("/login");
-      return;
+  const exploreRef = useRef(null);
+  const scrollExplore = (dir) => {
+    if (exploreRef.current) {
+      exploreRef.current.scrollBy({ left: dir * 300, behavior: "smooth" });
     }
+  };
 
-    try {
-      await apiFetch("/api/cart", {
-        method: "POST",
-        body: JSON.stringify({ product_id: product.id, quantity: 1 }),
-      });
-      setCartCount((c) => c + 1);
-      setAddedId(product.id);
-      setTimeout(() => setAddedId(null), 1200);
-    } catch (err) {
-      alert(err.message);
-    }
+  const exploreCategories = ["Smartwatches", "Accessories", "Headphones"];
+
+  const exploreCards = exploreCategories
+    .map((cat) => {
+      const match = products.find((p) => p.category === cat);
+      return match ? { category: cat, product: match } : null;
+    })
+    .filter(Boolean);
+
+  const showcaseFor = (cat) => {
+    const catProducts = products.filter((p) => p.category === cat).slice(0, 4);
+    if (catProducts.length === 0) return null;
+
+    return (
+      <section key={cat} className="showcase-section">
+        <div className="showcase-head">
+          <h2>{cat}</h2>
+          <Link
+            to={`/shop?category=${encodeURIComponent(cat)}`}
+            className="showcase-see-all"
+          >
+            See all
+          </Link>
+        </div>
+        <div className="showcase-grid">
+          {catProducts.map((p) => (
+            <Link key={p.id} to={`/product/${p.id}`} className="showcase-card">
+              <img src={p.image_url} alt={p.name} />
+              <div className="showcase-card-name">{p.name}</div>
+              <div className="showcase-card-more">View details →</div>
+            </Link>
+          ))}
+        </div>
+      </section>
+    );
   };
 
   return (
     <div className="store-page">
-      <header className="store-nav">
-        <div className="store-nav-top">
-          <Link to="/" className="store-wordmark">
-            <span className="auth-wordmark-mark">C</span>
-            CartCraft
-          </Link>
+      <StoreNav user={user} cartCount={cartCount} />
 
-          <input
-            className="store-search"
-            type="text"
-            placeholder="Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <div className="store-nav-actions">
-            {user ? (
-              <>
-                <span className="store-user-name">Hi, {user.name}</span>
-                <Link
-                  to={user.role === "admin" ? "/admin" : "/dashboard"}
-                  className="store-login-link"
-                >
-                  {user.role === "admin" ? "Admin" : "My account"}
-                </Link>
-              </>
-            ) : (
-              <Link to="/login" className="store-login-link">
-                Sign in
-              </Link>
-            )}
-            <Link to="/cart" className="store-cart-icon">
-              Cart
-              {cartCount > 0 && (
-                <span className="store-cart-badge">{cartCount}</span>
-              )}
+      <section className="store-hero">
+        <img src={heroImg} alt="" className="store-hero-img" />
+        <div className="store-hero-content">
+          <div className="store-hero-text">
+            <span className="store-hero-eyebrow">CartCraft</span>
+            <h1>Real tech, honestly priced</h1>
+            <p>Phones, laptops, audio and accessories. Nothing filtered.</p>
+          </div>
+          <div className="store-hero-actions">
+            <Link to="/shop" className="store-hero-btn-primary">
+              Shop now
+            </Link>
+            <Link to="/shop" className="store-hero-btn-secondary">
+              Learn more
             </Link>
           </div>
         </div>
+      </section>
 
-        <div className="store-nav-categories">
-          <button
-            className={activeCategory === null ? "active" : ""}
-            onClick={() => setActiveCategory(null)}
-          >
-            All
-          </button>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              className={activeCategory === cat ? "active" : ""}
-              onClick={() => setActiveCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </header>
+      <PromoBanner
+        eyebrow="Phones"
+        heading="Every make, one shelf"
+        subtext="Compare the latest phones side by side before you commit."
+        image={phonesImg}
+        ctaLabel="Browse phones"
+        ctaTo="/shop?category=Phones"
+      />
 
-      <section className="store-grid-section">
-        {loading && <p className="store-status">Loading products…</p>}
-        {error && <p className="store-status store-error">{error}</p>}
+      {!loading && !error && showcaseFor("Phones")}
 
-        {!loading && !error && filtered.length === 0 && (
-          <p className="store-status">No products match your search.</p>
-        )}
+      <PromoBanner
+        eyebrow="Laptops"
+        heading="Power, without the bulk"
+        subtext="Thin, fast, and built to actually last a workday."
+        image={laptopImg}
+        ctaLabel="Browse laptops"
+        ctaTo="/shop?category=Laptops"
+      />
+      {!loading && !error && showcaseFor("Laptops")}
 
-        {!loading && !error && filtered.length > 0 && (
-          <div className="store-grid">
-            {filtered.map((p) => (
-              <div
-                key={p.id}
-                className="store-card"
-                style={{
-                  "--cat-color": CATEGORY_COLORS[p.category] || "#6b6b76",
-                }}
+      {!loading && !error && exploreCards.length > 0 && (
+        <section className="explore-section">
+          <div className="explore-head">
+            <h2>Explore more</h2>
+          </div>
+          <div className="explore-track">
+            {exploreCards.map(({ category, product }) => (
+              <Link
+                key={category}
+                to={`/shop?category=${encodeURIComponent(category)}`}
+                className="explore-card"
               >
-                <img
-                  src={p.image_url}
-                  alt={p.name}
-                  className="store-card-img"
-                />
-                <div className="store-card-category">{p.category}</div>
-                <div className="store-card-name">{p.name}</div>
-                <div className="store-card-price">
-                  R{Number(p.price).toFixed(2)}
+                <div className="explore-card-media">
+                  <img src={product.image_url} alt={category} />
                 </div>
-                {p.stock < 10 && (
-                  <div className="store-card-lowstock">Only {p.stock} left</div>
-                )}
-                <button
-                  className="store-add-btn"
-                  onClick={() => handleAddToCart(p)}
-                >
-                  {addedId === p.id ? "Added ✓" : "Add to cart"}
-                </button>
-              </div>
+                <div className="explore-card-name">{category}</div>
+                <div className="explore-card-cta">Explore {category} →</div>
+              </Link>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,16 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap");
+
 :root {
-  --bg: #faf9f6;
-  --ink: #474747;
+  --bg: #ffffff;
+  --ink: #111111;
   --ink-soft: #6b6b76;
-  --nav-black: #18181b;
-  --nav-black-soft: #17171b;
-  --accent: #06d8bf;
-  --accent-dark: #188a7c;
+  --nav-black: #ffffff; /* nav is now white, not black */
+  --nav-black-soft: #f7f7f5;
+  --accent: #111111; /* black replaces teal everywhere */
+  --accent-dark: #000000;
   --border: #e7e7eb;
   --danger: #c0392b;
 
-  --font-display: "Bricolage Grotesque", -apple-system, sans-serif;
-  --font-body: "Inter", -apple-system, sans-serif;
+  --font-display: "JetBrains Mono", "Courier New", monospace;
+  --font-body: -apple-system, "Segoe UI", Roboto, sans-serif;
 
   font-family: var(--font-body);
 }
