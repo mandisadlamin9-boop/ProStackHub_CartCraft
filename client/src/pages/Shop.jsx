@@ -13,6 +13,7 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [activeCategory, setActiveCategory] = useState(
     searchParams.get("category") || null,
   );
@@ -90,31 +91,45 @@ export default function Shop() {
       <StoreNav user={user} cartCount={cartCount} alwaysSolid />
 
       <div className="shop-toolbar">
-        <input
-          className="shop-search"
-          type="text"
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="shop-filters">
-        <button
-          className={`shop-filter-chip${!activeCategory ? " active" : ""}`}
-          onClick={() => handleFilterClick(null)}
+        <select
+          className="shop-filter-select"
+          value={activeCategory || ""}
+          onChange={(e) => handleFilterClick(e.target.value || null)}
         >
-          All
-        </button>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            className={`shop-filter-chip${activeCategory === cat ? " active" : ""}`}
-            onClick={() => handleFilterClick(cat)}
+          <option value="">All categories</option>
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+
+        <button
+          className="shop-search-toggle"
+          onClick={() => setShowSearch((s) => !s)}
+          aria-label="Search"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
           >
-            {cat}
-          </button>
-        ))}
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+
+        {showSearch && (
+          <input
+            className="shop-search-input"
+            type="text"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoFocus
+          />
+        )}
       </div>
 
       {loading && <p className="store-status">Loading products…</p>}
