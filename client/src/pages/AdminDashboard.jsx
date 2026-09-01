@@ -8,7 +8,7 @@ const SECTIONS = [
   { id: "orders", label: "Orders" },
 ];
 
-import { CATEGORIES, CATEGORY_COLORS } from "../lib/constants";
+import { CATEGORIES } from "../lib/constants";
 
 const EMPTY_FORM = {
   name: "",

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
+import cartHero from "../assets/apple-flatlay-hero-full.jpg";
+import PromoBar from "../components/PromoBar";
+import BackButton from "../components/BackButton";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -73,19 +76,29 @@ export default function Cart() {
 
   return (
     <div className="cart-page">
-      <header className="cart-topbar">
-        <Link to="/" className="store-wordmark">
-          <span className="auth-wordmark-mark">C</span>
-          CartCraft
-        </Link>
-        <Link to="/" className="cart-continue-link">
-          ← Continue shopping
-        </Link>
-      </header>
+      <PromoBar />
+
+      <section className="cart-hero">
+        <img src={cartHero} alt="" className="cart-hero-img" />
+        <div className="cart-hero-overlay" />
+        <header className="cart-topbar">
+          <Link to="/" className="cart-wordmark">
+            <span className="auth-wordmark-mark">C</span>
+            CartCraft
+          </Link>
+          <BackButton
+            to="/"
+            label="Continue shopping"
+            className="cart-continue-link"
+          />
+        </header>
+        <div className="cart-hero-content">
+          <span className="cart-hero-eyebrow">Your cart</span>
+          <h1>Ready when you are</h1>
+        </div>
+      </section>
 
       <div className="cart-body">
-        <h1>Your cart</h1>
-
         {canceled && (
           <div className="cart-banner">
             Payment didn't go through — you weren't charged. Feel free to try

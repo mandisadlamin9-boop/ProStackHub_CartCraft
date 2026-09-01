@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { apiFetch, getCurrentUser, logout } from "../lib/api";
+import ordersHero from "../assets/3.jpg";
 
 const SECTIONS = [
   { id: "orders", label: "Orders" },
@@ -26,6 +27,16 @@ export default function Dashboard() {
       .then((data) => setOrders(data.orders))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const poll = setInterval(() => {
+      apiFetch("/api/orders")
+        .then((data) => setOrders(data.orders))
+        .catch(() => {}); // silent - don't disturb UI on a failed poll
+    }, 15000); // every 15s
+
+    return () => clearInterval(poll);
   }, []);
 
   useEffect(() => {
@@ -93,6 +104,31 @@ export default function Dashboard() {
         </nav>
       </header>
 
+      <section className="dash-hero">
+        <img src={ordersHero} alt="" className="dash-hero-img" />
+        <div className="dash-hero-overlay" />
+        <Link to="/" className="dash-back-home">
+          ← Back to store
+        </Link>
+        <div className="dash-hero-content">
+          <span className="dash-hero-eyebrow">My account</span>
+          <h1>
+            Welcome back{user?.name ? `, ${user.name.split(" ")[0]}` : ""}
+          </h1>
+          <p>Everything you've ordered, tracked in one place.</p>
+        </div>
+        <button
+          className="dash-hero-scroll"
+          onClick={() =>
+            sectionRefs.current.orders?.scrollIntoView({ behavior: "smooth" })
+          }
+          aria-label="Scroll to orders"
+        >
+          <span>SCROLL</span>
+          <span className="dash-hero-scroll-line" />
+        </button>
+      </section>
+
       {/* ===== Orders ===== */}
       <section
         id="orders"
@@ -121,53 +157,44 @@ export default function Dashboard() {
               const currentIndex = ORDER_STEPS.indexOf(order.status);
 
               return (
-                <div key={order.id} className="admin-order-card">
-                  <div className="admin-order-top">
+                <div key={order.id} className="order-card">
+                  <div className="order-card-header">
                     <div>
-                      <div className="admin-order-id">Order #{order.id}</div>
-                      <div className="admin-order-customer">
-                        {order.items?.length || 0} item
-                        {order.items?.length !== 1 ? "s" : ""}
-                      </div>
-                    </div>
-                    <div className="admin-order-meta">
-                      <div className="admin-order-total">
-                        R{Number(order.total_amount).toFixed(2)}
-                      </div>
-                      <div className="admin-order-date">
+                      <div className="order-card-id">Order #{order.id}</div>
+                      <div className="order-card-date">
                         {new Date(order.created_at).toLocaleDateString(
                           "en-ZA",
                           { day: "numeric", month: "short", year: "numeric" },
                         )}
                       </div>
                     </div>
+                    <div className="order-card-total">
+                      <span className="order-card-total-label">Total paid</span>
+                      <span className="order-card-total-value">
+                        R{Number(order.total_amount).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="admin-order-tracker">
-                    {ORDER_STEPS.map((step, i) => (
-                      <div key={step} className="admin-tracker-step">
-                        <div
-                          className={
-                            "admin-tracker-dot" +
-                            (i <= currentIndex ? " done" : "")
-                          }
+                  <div className="order-card-items">
+                    {order.items?.map((item) => (
+                      <div key={item.product_id} className="order-item-card">
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="order-item-card-img"
                         />
-                        <span
-                          className={
-                            "admin-tracker-label" +
-                            (i <= currentIndex ? " done" : "")
-                          }
-                        >
-                          {step}
-                        </span>
-                        {i < ORDER_STEPS.length - 1 && (
-                          <div
-                            className={
-                              "admin-tracker-line" +
-                              (i < currentIndex ? " done" : "")
-                            }
-                          />
-                        )}
+                        <div className="order-item-card-info">
+                          <div className="order-item-card-name">
+                            {item.name}
+                          </div>
+                          <div className="order-item-card-qty">
+                            Qty {item.quantity}
+                          </div>
+                        </div>
+                        <div className="order-item-card-price">
+                          R{Number(item.price_at_purchase).toFixed(2)}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -181,31 +208,36 @@ export default function Dashboard() {
                     }
                   >
                     {expandedOrderId === order.id
-                      ? "Hide items ▲"
-                      : `View items (${order.items?.length || 0}) ▼`}
+                      ? "Hide tracking ▲"
+                      : "Track order ▼"}
                   </button>
 
                   {expandedOrderId === order.id && (
-                    <div className="admin-order-items">
-                      {order.items?.map((item) => (
-                        <div
-                          key={item.product_id}
-                          className="admin-order-item-row"
-                        >
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="admin-order-item-img"
+                    <div className="admin-order-tracker">
+                      {ORDER_STEPS.map((step, i) => (
+                        <div key={step} className="admin-tracker-step">
+                          <div
+                            className={
+                              "admin-tracker-dot" +
+                              (i <= currentIndex ? " done" : "")
+                            }
                           />
-                          <span className="admin-order-item-name">
-                            {item.name}
+                          <span
+                            className={
+                              "admin-tracker-label" +
+                              (i <= currentIndex ? " done" : "")
+                            }
+                          >
+                            {step}
                           </span>
-                          <span className="admin-order-item-qty">
-                            × {item.quantity}
-                          </span>
-                          <span className="admin-order-item-price">
-                            R{Number(item.price_at_purchase).toFixed(2)}
-                          </span>
+                          {i < ORDER_STEPS.length - 1 && (
+                            <div
+                              className={
+                                "admin-tracker-line" +
+                                (i < currentIndex ? " done" : "")
+                              }
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
@@ -232,13 +264,19 @@ export default function Dashboard() {
         </div>
 
         <div className="dash-account-card">
-          <div className="dash-account-row">
-            <span className="dash-account-label">Name</span>
-            <span className="dash-account-value">{user?.name}</span>
+          <div className="dash-account-avatar">
+            {user?.name?.charAt(0).toUpperCase() || "?"}
           </div>
-          <div className="dash-account-row">
-            <span className="dash-account-label">Email</span>
-            <span className="dash-account-value">{user?.email}</span>
+          <div className="dash-account-rows">
+            <span className="dash-account-tag">Customer account</span>
+            <div className="dash-account-row">
+              <span className="dash-account-label">Name</span>
+              <span className="dash-account-value">{user?.name}</span>
+            </div>
+            <div className="dash-account-row">
+              <span className="dash-account-label">Email</span>
+              <span className="dash-account-value">{user?.email}</span>
+            </div>
           </div>
         </div>
       </section>

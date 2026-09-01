@@ -16,6 +16,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cartCount, setCartCount] = useState(0);
+  const exploreSectionRef = useRef(null);
 
   useEffect(() => {
     apiFetch("/api/products")
@@ -78,7 +79,7 @@ export default function Home() {
 
   return (
     <div className="store-page">
-      <StoreNav user={user} cartCount={cartCount} />
+      <StoreNav user={user} cartCount={cartCount} alwaysSolid />
 
       <section className="store-hero">
         <img src={heroImg} alt="" className="store-hero-img" />
@@ -96,6 +97,18 @@ export default function Home() {
               Learn more
             </Link>
           </div>
+
+          {/* ADD THE SCROLL BUTTON HERE — as a third sibling inside store-hero-content */}
+          <button
+            className="dash-hero-scroll"
+            onClick={() =>
+              window.scrollBy({ top: window.innerHeight, behavior: "smooth" })
+            }
+            aria-label="Scroll down"
+          >
+            <span>SCROLL</span>
+            <span className="dash-hero-scroll-line" />
+          </button>
         </div>
       </section>
 
@@ -121,7 +134,7 @@ export default function Home() {
       {!loading && !error && showcaseFor("Laptops")}
 
       {!loading && !error && exploreCards.length > 0 && (
-        <section className="explore-section">
+        <section className="explore-section" ref={exploreSectionRef}>
           <div className="explore-head">
             <h2>Explore more</h2>
           </div>

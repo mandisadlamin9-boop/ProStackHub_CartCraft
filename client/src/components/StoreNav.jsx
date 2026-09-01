@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { CATEGORIES } from "../lib/constants";
 
@@ -10,6 +10,14 @@ export default function StoreNav({
   alwaysSolid,
 }) {
   const [scrolled, setScrolled] = useState(!!alwaysSolid);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentCategory = onCategoryClick
+    ? activeCategory
+    : new URLSearchParams(location.search).get("category");
+  const isShopActive = location.pathname === "/shop" && !currentCategory;
 
   useEffect(() => {
     if (alwaysSolid) return;
@@ -17,6 +25,14 @@ export default function StoreNav({
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, [alwaysSolid]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    navigate(`/shop?search=${encodeURIComponent(query.trim())}`);
+    setSearchOpen(false);
+    setQuery("");
+  };
 
   return (
     <header
@@ -28,18 +44,24 @@ export default function StoreNav({
         </Link>
 
         <nav className="store-nav-links">
-          <Link to="/shop">Shop</Link>
+          <Link to="/shop" className={isShopActive ? "active" : ""}>
+            Shop
+          </Link>
           {CATEGORIES.map((cat) =>
             onCategoryClick ? (
               <button
                 key={cat}
                 onClick={() => onCategoryClick(cat)}
-                className={activeCategory === cat ? "active" : ""}
+                className={currentCategory === cat ? "active" : ""}
               >
                 {cat}
               </button>
             ) : (
-              <Link key={cat} to={`/shop?category=${encodeURIComponent(cat)}`}>
+              <Link
+                key={cat}
+                to={`/shop?category=${encodeURIComponent(cat)}`}
+                className={currentCategory === cat ? "active" : ""}
+              >
                 {cat}
               </Link>
             ),
@@ -47,17 +69,36 @@ export default function StoreNav({
         </nav>
 
         <div className="store-nav-actions">
-          <button className="store-icon-btn" aria-label="Search">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
+          <form className="store-nav-search" onSubmit={handleSearchSubmit}>
+            {searchOpen && (
+              <input
+                className="store-nav-search-input"
+                type="text"
+                placeholder="Search products…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoFocus
+              />
+            )}
+            <button
+              type={searchOpen ? "submit" : "button"}
+              className="store-icon-btn"
+              aria-label="Search"
+              onClick={() => {
+                if (!searchOpen) setSearchOpen(true);
+              }}
             >
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </form>
           <Link
             to={
               user

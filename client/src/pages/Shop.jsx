@@ -12,13 +12,14 @@ export default function Shop() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [showSearch, setShowSearch] = useState(!!searchParams.get("search"));
   const [activeCategory, setActiveCategory] = useState(
     searchParams.get("category") || null,
   );
   const [cartCount, setCartCount] = useState(0);
   const [addedId, setAddedId] = useState(null);
+  const [addingId, setAddingId] = useState(null);
 
   useEffect(() => {
     apiFetch("/api/products")
@@ -35,6 +36,10 @@ export default function Shop() {
     }
   }, []);
 
+  useEffect(() => {
+    setActiveCategory(searchParams.get("category") || null);
+  }, [searchParams]);
+
   const handleFilterClick = (cat) => {
     setActiveCategory(cat);
     setSearchParams(cat ? { category: cat } : {});
@@ -45,6 +50,7 @@ export default function Shop() {
       navigate("/login");
       return;
     }
+    setAddingId(product.id);
     try {
       await apiFetch("/api/cart", {
         method: "POST",
@@ -55,9 +61,10 @@ export default function Shop() {
       setTimeout(() => setAddedId(null), 1200);
     } catch (err) {
       alert(err.message);
+    } finally {
+      setAddingId(null);
     }
   };
-
   const searched = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()),
   );
@@ -75,13 +82,20 @@ export default function Shop() {
         <div className="shop-card-lowstock">Only {p.stock} left</div>
       )}
       <button
-        className="shop-card-add"
+        className={`shop-card-add${addedId === p.id ? " added" : ""}`}
         onClick={(e) => {
           e.preventDefault();
           handleAddToCart(p);
         }}
+        disabled={addingId === p.id}
       >
-        {addedId === p.id ? "Added ✓" : "Add to cart"}
+        {addingId === p.id ? (
+          <span className="btn-spinner" />
+        ) : addedId === p.id ? (
+          "Added ✓"
+        ) : (
+          "Add to cart"
+        )}
       </button>
     </Link>
   );

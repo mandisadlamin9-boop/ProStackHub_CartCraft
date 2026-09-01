@@ -24,7 +24,7 @@ export default function Login() {
       } else {
         data = await register(name, email, password);
       }
-      navigate(data.user.role === "admin" ? "/admin" : "/dashboard");
+      navigate(data.user.role === "admin" ? "/admin" : "/");
     } catch (err) {
       setError(err.message);
     } finally {
