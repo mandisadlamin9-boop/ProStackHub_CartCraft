@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch, getCurrentUser, logout } from "../lib/api";
+import { useToast } from "../components/ToastProvider";
 
 const SECTIONS = [
   { id: "overview", label: "Overview" },
@@ -22,6 +23,7 @@ const EMPTY_FORM = {
 export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
+  const toast = useToast();
   const user = getCurrentUser();
   const sectionRefs = useRef({});
   const activeId = location.hash.replace("#", "") || "overview";
@@ -47,6 +49,18 @@ export default function AdminDashboard() {
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+
+  const [viewingCategory, setViewingCategory] = useState(null);
+
+  const categoriesPresent = CATEGORIES.filter((c) =>
+    products.some((p) => p.category === c),
+  );
+  const categoryPreview = (cat) => products.find((p) => p.category === cat);
+  const categoryCount = (cat) =>
+    products.filter((p) => p.category === cat).length;
+  const visibleProducts = viewingCategory
+    ? products.filter((p) => p.category === viewingCategory)
+    : [];
 
   useEffect(() => {
     apiFetch("/api/orders/admin/summary")
@@ -91,11 +105,12 @@ export default function AdminDashboard() {
         prev.map((o) => (o.id === order.id ? { ...o, ...updated } : o)),
       );
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setUpdatingOrderId(null);
     }
   };
+
   const archiveOrder = async (order) => {
     try {
       const { order: updated } = await apiFetch(
@@ -106,10 +121,9 @@ export default function AdminDashboard() {
         prev.map((o) => (o.id === order.id ? { ...o, ...updated } : o)),
       );
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
-
   useEffect(() => {
     const id = location.hash.replace("#", "");
     if (id && sectionRefs.current[id]) {
@@ -221,7 +235,7 @@ export default function AdminDashboard() {
       await apiFetch(`/api/products/${id}`, { method: "DELETE" });
       setProducts((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
   const categoryBreakdown = CATEGORIES.map((cat) => ({
@@ -315,33 +329,6 @@ export default function AdminDashboard() {
             </div>
             <div className="admin-charts-row">
               <div className="admin-chart-card">
-                <h2 className="admin-subheading">Order status split</h2>
-                <div className="admin-bar-chart">
-                  {["Placed", "Packed", "Shipped", "Delivered"].map(
-                    (status) => {
-                      const count = statusCount(status);
-                      const pct =
-                        totalStatusCount > 0
-                          ? Math.round((count / totalStatusCount) * 100)
-                          : 0;
-                      return (
-                        <div key={status} className="admin-bar-row">
-                          <span className="admin-bar-label">{status}</span>
-                          <div className="admin-bar-track">
-                            <div
-                              className="admin-bar-fill"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="admin-bar-value">{count}</span>
-                        </div>
-                      );
-                    },
-                  )}
-                </div>
-              </div>
-
-              <div className="admin-chart-card">
                 <h2 className="admin-subheading">Inventory by category</h2>
                 <div className="admin-bar-chart">
                   {categoryBreakdown.map(({ category, count }) => (
@@ -352,7 +339,6 @@ export default function AdminDashboard() {
                           className="admin-bar-fill"
                           style={{
                             width: `${(count / maxCategoryCount) * 100}%`,
-                            background: CATEGORY_COLORS[category],
                           }}
                         />
                       </div>
@@ -375,15 +361,28 @@ export default function AdminDashboard() {
         <div className="admin-section-head admin-section-head-row">
           <div>
             <span className="admin-eyebrow">Catalog</span>
-            <h1>Products</h1>
+            <h1>{viewingCategory ? viewingCategory : "Products"}</h1>
             <p className="admin-sub">
-              {products.length} product{products.length !== 1 ? "s" : ""} live
-              in the store.
+              {viewingCategory
+                ? `${categoryCount(viewingCategory)} product${
+                    categoryCount(viewingCategory) !== 1 ? "s" : ""
+                  } in ${viewingCategory}.`
+                : `${products.length} products live in the store, across ${categoriesPresent.length} categories.`}
             </p>
           </div>
-          <button className="admin-primary-btn" onClick={openAddForm}>
-            + Add product
-          </button>
+          <div className="admin-section-head-actions">
+            {viewingCategory && (
+              <button
+                className="admin-secondary-btn"
+                onClick={() => setViewingCategory(null)}
+              >
+                ← All categories
+              </button>
+            )}
+            <button className="admin-primary-btn" onClick={openAddForm}>
+              + Add product
+            </button>
+          </div>
         </div>
 
         {showForm && (
@@ -497,22 +496,49 @@ export default function AdminDashboard() {
           <p className="admin-status admin-error">{productsError}</p>
         )}
 
-        {!productsLoading && !productsError && (
+        {!productsLoading && !productsError && !viewingCategory && (
+          <div className="admin-category-grid">
+            {categoriesPresent.map((cat) => {
+              const preview = categoryPreview(cat);
+              return (
+                <div key={cat} className="admin-category-card">
+                  <img
+                    src={preview.image_url}
+                    alt={preview.name}
+                    className="admin-category-card-img"
+                  />
+                  <div className="admin-category-card-body">
+                    <div className="admin-category-card-name">{cat}</div>
+                    <div className="admin-category-card-count">
+                      {categoryCount(cat)} product
+                      {categoryCount(cat) !== 1 ? "s" : ""}
+                    </div>
+                    <button
+                      className="admin-secondary-btn"
+                      onClick={() => setViewingCategory(cat)}
+                    >
+                      View more →
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!productsLoading && !productsError && viewingCategory && (
           <div className="admin-shelf">
-            {products.map((p) => (
+            {visibleProducts.map((p) => (
               <div
                 key={p.id}
                 className="admin-shelf-row"
-                style={{
-                  "--cat-color": CATEGORY_COLORS[p.category] || "#6b6b76",
-                }}
+                style={{ "--cat-color": "#9a9aa1" }}
               >
                 <img
                   src={p.image_url}
                   alt={p.name}
                   className="admin-shelf-img"
                 />
-
                 <div className="admin-shelf-info">
                   <div className="admin-shelf-top">
                     <span className="admin-shelf-category">{p.category}</span>
@@ -525,14 +551,12 @@ export default function AdminDashboard() {
                     <div className="admin-shelf-desc">{p.description}</div>
                   )}
                 </div>
-
                 <div className="admin-shelf-meta">
                   <div className="admin-shelf-price">
                     R{Number(p.price).toFixed(2)}
                   </div>
                   <div className="admin-shelf-stock">{p.stock} in stock</div>
                 </div>
-
                 <div className="admin-shelf-actions">
                   <button
                     className="admin-icon-btn"
@@ -552,7 +576,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </section>
-
       {/* ===== Orders ===== */}
       <section
         id="orders"

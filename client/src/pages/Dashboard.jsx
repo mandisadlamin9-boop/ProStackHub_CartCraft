@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [showDelivered, setShowDelivered] = useState(false);
 
   useEffect(() => {
     apiFetch("/api/orders")
@@ -73,6 +74,92 @@ export default function Dashboard() {
     navigate("/login");
   };
 
+  const renderOrderCard = (order) => {
+    const currentIndex = ORDER_STEPS.indexOf(order.status);
+
+    return (
+      <div key={order.id} className="order-card">
+        <div className="order-card-header">
+          <div>
+            <div className="order-card-id">Order #{order.id}</div>
+            <div className="order-card-date">
+              {new Date(order.created_at).toLocaleDateString("en-ZA", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+          <div className="order-card-total">
+            <span className="order-card-total-label">Total paid</span>
+            <span className="order-card-total-value">
+              R{Number(order.total_amount).toFixed(2)}
+            </span>
+          </div>
+        </div>
+
+        <div className="order-card-items">
+          {order.items?.map((item) => (
+            <div key={item.product_id} className="order-item-card">
+              <img
+                src={item.image_url}
+                alt={item.name}
+                className="order-item-card-img"
+              />
+              <div className="order-item-card-info">
+                <div className="order-item-card-name">{item.name}</div>
+                <div className="order-item-card-qty">Qty {item.quantity}</div>
+              </div>
+              <div className="order-item-card-price">
+                R{Number(item.price_at_purchase).toFixed(2)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          className="admin-order-toggle"
+          onClick={() =>
+            setExpandedOrderId(expandedOrderId === order.id ? null : order.id)
+          }
+        >
+          {expandedOrderId === order.id ? "Hide tracking ▲" : "Track order ▼"}
+        </button>
+
+        {expandedOrderId === order.id && (
+          <div className="admin-order-tracker">
+            {ORDER_STEPS.map((step, i) => (
+              <div key={step} className="admin-tracker-step">
+                <div
+                  className={
+                    "admin-tracker-dot" + (i <= currentIndex ? " done" : "")
+                  }
+                />
+                <span
+                  className={
+                    "admin-tracker-label" + (i <= currentIndex ? " done" : "")
+                  }
+                >
+                  {step}
+                </span>
+                {i < ORDER_STEPS.length - 1 && (
+                  <div
+                    className={
+                      "admin-tracker-line" + (i < currentIndex ? " done" : "")
+                    }
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const activeOrders = orders.filter((o) => o.status !== "Delivered");
+  const deliveredOrders = orders.filter((o) => o.status === "Delivered");
+
   return (
     <div className="dash-page">
       <header className="dash-topbar">
@@ -102,14 +189,14 @@ export default function Dashboard() {
             </button>
           ))}
         </nav>
+        <Link to="/" className="dash-back-home">
+          ← Back to store
+        </Link>
       </header>
 
       <section className="dash-hero">
         <img src={ordersHero} alt="" className="dash-hero-img" />
         <div className="dash-hero-overlay" />
-        <Link to="/" className="dash-back-home">
-          ← Back to store
-        </Link>
         <div className="dash-hero-content">
           <span className="dash-hero-eyebrow">My account</span>
           <h1>
@@ -152,100 +239,36 @@ export default function Dashboard() {
         )}
 
         {!loading && !error && orders.length > 0 && (
-          <div className="admin-order-list">
-            {orders.map((order) => {
-              const currentIndex = ORDER_STEPS.indexOf(order.status);
+          <>
+            {activeOrders.length > 0 ? (
+              <div className="admin-order-list">
+                {activeOrders.map(renderOrderCard)}
+              </div>
+            ) : (
+              <p className="admin-status">
+                No active orders — all your orders have been delivered.
+              </p>
+            )}
 
-              return (
-                <div key={order.id} className="order-card">
-                  <div className="order-card-header">
-                    <div>
-                      <div className="order-card-id">Order #{order.id}</div>
-                      <div className="order-card-date">
-                        {new Date(order.created_at).toLocaleDateString(
-                          "en-ZA",
-                          { day: "numeric", month: "short", year: "numeric" },
-                        )}
-                      </div>
-                    </div>
-                    <div className="order-card-total">
-                      <span className="order-card-total-label">Total paid</span>
-                      <span className="order-card-total-value">
-                        R{Number(order.total_amount).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
+            {deliveredOrders.length > 0 && (
+              <div className="dash-delivered-toggle-wrap">
+                <button
+                  className="dash-delivered-toggle"
+                  onClick={() => setShowDelivered((v) => !v)}
+                >
+                  {showDelivered ? "Hide" : "Show"} {deliveredOrders.length}{" "}
+                  delivered order{deliveredOrders.length !== 1 ? "s" : ""}{" "}
+                  {showDelivered ? "▲" : "▼"}
+                </button>
+              </div>
+            )}
 
-                  <div className="order-card-items">
-                    {order.items?.map((item) => (
-                      <div key={item.product_id} className="order-item-card">
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="order-item-card-img"
-                        />
-                        <div className="order-item-card-info">
-                          <div className="order-item-card-name">
-                            {item.name}
-                          </div>
-                          <div className="order-item-card-qty">
-                            Qty {item.quantity}
-                          </div>
-                        </div>
-                        <div className="order-item-card-price">
-                          R{Number(item.price_at_purchase).toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    className="admin-order-toggle"
-                    onClick={() =>
-                      setExpandedOrderId(
-                        expandedOrderId === order.id ? null : order.id,
-                      )
-                    }
-                  >
-                    {expandedOrderId === order.id
-                      ? "Hide tracking ▲"
-                      : "Track order ▼"}
-                  </button>
-
-                  {expandedOrderId === order.id && (
-                    <div className="admin-order-tracker">
-                      {ORDER_STEPS.map((step, i) => (
-                        <div key={step} className="admin-tracker-step">
-                          <div
-                            className={
-                              "admin-tracker-dot" +
-                              (i <= currentIndex ? " done" : "")
-                            }
-                          />
-                          <span
-                            className={
-                              "admin-tracker-label" +
-                              (i <= currentIndex ? " done" : "")
-                            }
-                          >
-                            {step}
-                          </span>
-                          {i < ORDER_STEPS.length - 1 && (
-                            <div
-                              className={
-                                "admin-tracker-line" +
-                                (i < currentIndex ? " done" : "")
-                              }
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+            {showDelivered && (
+              <div className="admin-order-list">
+                {deliveredOrders.map(renderOrderCard)}
+              </div>
+            )}
+          </>
         )}
       </section>
 

@@ -3,11 +3,13 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { apiFetch, getCurrentUser } from "../lib/api";
 import StoreNav from "../components/StoreNav";
 import BackButton from "../components/BackButton";
+import { useToast } from "../components/ToastProvider";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = getCurrentUser();
+  const toast = useToast();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function ProductDetail() {
       setAdded(true);
       setTimeout(() => setAdded(false), 1200);
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setAdding(false);
     }
@@ -219,7 +221,7 @@ export default function ProductDetail() {
               {product.description && (
                 <p className="product-detail-desc">{product.description}</p>
               )}
-              {product.stock < 10 && (
+              {product.stock > 0 && product.stock < 10 && (
                 <div className="product-detail-lowstock">
                   Only {product.stock} left
                 </div>
@@ -227,10 +229,12 @@ export default function ProductDetail() {
               <button
                 className={`product-detail-add${added ? " added" : ""}`}
                 onClick={handleAddToCart}
-                disabled={adding}
+                disabled={adding || product.stock === 0}
               >
                 {adding ? (
                   <span className="btn-spinner" />
+                ) : product.stock === 0 ? (
+                  "Sold out"
                 ) : added ? (
                   "Added ✓"
                 ) : (

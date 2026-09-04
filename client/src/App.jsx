@@ -8,22 +8,23 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Cart from "./pages/Cart";
 import OrderSuccess from "./pages/OrderSuccess";
 import ProductDetail from "./pages/ProductDetail";
+import { ToastProvider } from "./components/ToastProvider";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/order-success" element={<OrderSuccess />} />
-        <Route path="/product/:id" element={<ProductDetail />} />
-
-        <Route path="/shop" element={<Shop />} />
-      </Routes>
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/shop" element={<Shop />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }

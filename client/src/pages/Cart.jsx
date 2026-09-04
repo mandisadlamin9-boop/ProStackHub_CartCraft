@@ -4,11 +4,13 @@ import { apiFetch } from "../lib/api";
 import cartHero from "../assets/apple-flatlay-hero-full.jpg";
 import PromoBar from "../components/PromoBar";
 import BackButton from "../components/BackButton";
+import { useToast } from "../components/ToastProvider";
 
 export default function Cart() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const canceled = searchParams.get("canceled") === "true";
+  const toast = useToast();
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ export default function Cart() {
         body: JSON.stringify({ quantity: newQty }),
       });
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
       loadCart();
     }
   };
@@ -51,7 +53,7 @@ export default function Cart() {
     try {
       await apiFetch(`/api/cart/${item.id}`, { method: "DELETE" });
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
       loadCart();
     }
   };
@@ -69,7 +71,7 @@ export default function Cart() {
       });
       window.location.href = checkout_url;
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
       setCheckingOut(false);
     }
   };

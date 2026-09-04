@@ -65,14 +65,21 @@ router.post("/", requireAuth, async (req, res) => {
         .query(`INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
                 VALUES (@order_id, @product_id, @quantity, @price_at_purchase)`);
     }
-
+    const isValidImageUrl = (url) => {
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+      } catch {
+        return false;
+      }
+    };
     // Build Stripe's line items from server-verified prices, never client-sent ones
     const line_items = cartItems.map((item) => ({
       price_data: {
         currency: "zar",
         product_data: {
           name: item.name,
-          images: item.image_url ? [item.image_url] : [],
+          images: isValidImageUrl(item.image_url) ? [item.image_url] : [],
         },
         unit_amount: Math.round(item.price * 100), // Stripe uses cents
       },
